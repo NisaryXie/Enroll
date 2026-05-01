@@ -1,0 +1,5 @@
+{
+  "name": "Chengdu Urban Construction School Reporting System",
+  "description": "A dual-interface application for student recruitment reporting (H5 for agents) and administrative management (Web Dashboard) with AI-powered insights.",
+  "requestFramePermissions": []
+}
