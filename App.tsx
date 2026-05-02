@@ -9,8 +9,21 @@ type SystemMode = 'PORTAL' | 'STUDENT_APP' | 'ADMIN_APP';
 
 const DEFAULT_LOGO = "https://pic1.imgdb.cn/item/69383a2df9354404e341391f.jpg";
 
+const getModeFromUrl = (): SystemMode => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const appParam = params.get('app');
+    if (appParam === 'admin') return 'ADMIN_APP';
+    if (appParam === 'portal') return 'PORTAL';
+    if (appParam === 'student') return 'STUDENT_APP';
+    return 'STUDENT_APP';
+  } catch (e) {
+    return 'STUDENT_APP';
+  }
+};
+
 const App: React.FC = () => {
-  const [mode, setMode] = useState<SystemMode>('STUDENT_APP');
+  const [mode, setMode] = useState<SystemMode>(() => getModeFromUrl());
   const [currentUser, setCurrentUser] = useState<Recruiter | null>(null);
   const [settings, setSettings] = useState<SystemSettings>({ reportingStartTime: null, reportingEndTime: null, logoUrl: '' });
   const [isTimeValid, setIsTimeValid] = useState<{valid: boolean, message?: string}>({valid: true});
@@ -41,17 +54,7 @@ const App: React.FC = () => {
         setIsTimeValid(t);
 
         // Handle URL Routing
-        const params = new URLSearchParams(window.location.search);
-        const appParam = params.get('app');
-        if (appParam === 'student') {
-          setMode('STUDENT_APP');
-        } else if (appParam === 'admin') {
-          setMode('ADMIN_APP');
-        } else if (appParam === 'portal') {
-          setMode('PORTAL');
-        } else {
-          setMode('STUDENT_APP');
-        }
+        setMode(getModeFromUrl());
       } catch (e) {
         console.error("App initialization failed", e);
         // Fallback to defaults if critical failure
@@ -68,17 +71,7 @@ const App: React.FC = () => {
       setLoginPhone('');
       setPassword('');
       
-      const params = new URLSearchParams(window.location.search);
-      const appParam = params.get('app');
-      if (appParam === 'student') {
-        setMode('STUDENT_APP');
-      } else if (appParam === 'admin') {
-        setMode('ADMIN_APP');
-      } else if (appParam === 'portal') {
-        setMode('PORTAL');
-      } else {
-        setMode('STUDENT_APP');
-      }
+      setMode(getModeFromUrl());
     };
     
     // Sync settings across tabs
