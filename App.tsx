@@ -10,7 +10,7 @@ type SystemMode = 'PORTAL' | 'STUDENT_APP' | 'ADMIN_APP';
 const DEFAULT_LOGO = "https://pic1.imgdb.cn/item/69383a2df9354404e341391f.jpg";
 
 const App: React.FC = () => {
-  const [mode, setMode] = useState<SystemMode>('PORTAL');
+  const [mode, setMode] = useState<SystemMode>('STUDENT_APP');
   const [currentUser, setCurrentUser] = useState<Recruiter | null>(null);
   const [settings, setSettings] = useState<SystemSettings>({ reportingStartTime: null, reportingEndTime: null, logoUrl: '' });
   const [isTimeValid, setIsTimeValid] = useState<{valid: boolean, message?: string}>({valid: true});
@@ -47,8 +47,10 @@ const App: React.FC = () => {
           setMode('STUDENT_APP');
         } else if (appParam === 'admin') {
           setMode('ADMIN_APP');
-        } else {
+        } else if (appParam === 'portal') {
           setMode('PORTAL');
+        } else {
+          setMode('STUDENT_APP');
         }
       } catch (e) {
         console.error("App initialization failed", e);
@@ -72,8 +74,10 @@ const App: React.FC = () => {
         setMode('STUDENT_APP');
       } else if (appParam === 'admin') {
         setMode('ADMIN_APP');
-      } else {
+      } else if (appParam === 'portal') {
         setMode('PORTAL');
+      } else {
+        setMode('STUDENT_APP');
       }
     };
     
@@ -198,7 +202,9 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setUsername('');
     setLoginPhone('');
-    changeMode('PORTAL');
+    setPassword('');
+    setLoginError('');
+    changeMode('STUDENT_APP');
   };
 
   // --- PORTAL VIEW ---
