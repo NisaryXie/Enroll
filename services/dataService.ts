@@ -15,13 +15,16 @@ interface SchoolDB extends DBSchema {
   };
   settings: {
     key: string;
-    value: any; 
+    value: any;
   };
 }
 
 const DB_NAME = 'chengdu_school_db';
 const DB_VERSION = 1;
 const CLOUD_CONFIG_KEY = 'cloud_config';
+const DEFAULT_FIREBASE_DB_URL =
+  (import.meta as any)?.env?.VITE_FIREBASE_DB_URL ||
+  'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 // --- Mock Data ---
 const MOCK_ADMIN: Recruiter = { id: 'admin-1', username: 'admin', role: 'admin' };
@@ -48,8 +51,8 @@ const getDB = () => {
         }
       },
     }).catch(err => {
-        console.error("Failed to open database", err);
-        throw err;
+      console.error("Failed to open database", err);
+      throw err;
     }) as any;
   }
   return dbPromise;
@@ -68,25 +71,25 @@ export const getCloudConfig = async (): Promise<CloudConfig | null> => {
   try {
     const db = await getDB();
     const storedConfig = await db.get('settings', CLOUD_CONFIG_KEY);
-    
+
     // Default to enabled with provided URL if not configured
     if (!storedConfig) {
-        const defaultConfig: CloudConfig = {
-            type: 'firebase',
-            dbUrl: 'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app', 
-            enabled: true
-        };
-        return defaultConfig;
+      const defaultConfig: CloudConfig = {
+        type: 'firebase',
+        dbUrl: DEFAULT_FIREBASE_DB_URL,
+        enabled: true
+      };
+      return defaultConfig;
     }
-    
+
     return storedConfig;
   } catch (e) {
     console.warn("Error loading cloud config, falling back to default", e);
     // Return safe default to prevent app crash
     return {
-        type: 'firebase',
-        dbUrl: 'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app', 
-        enabled: true
+      type: 'firebase',
+      dbUrl: DEFAULT_FIREBASE_DB_URL,
+      enabled: true
     };
   }
 };
@@ -126,13 +129,13 @@ const cloudRequest = async (path: string, method: string = 'GET', body?: any) =>
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal
     });
-    
+
     clearTimeout(timeoutId);
     if (!response.ok) throw new Error(`Cloud request failed`);
     return response.json();
   } catch (e) {
     // Suppress cloud errors to keep local functionality working
-    return null; 
+    return null;
   }
 };
 
@@ -141,24 +144,24 @@ const cloudRequest = async (path: string, method: string = 'GET', body?: any) =>
 export const getStudents = async (): Promise<Student[]> => {
   try {
     const config = await getCloudConfig();
-    
+
     // Try to fetch from cloud first if enabled
     if (config?.enabled && config.type === 'firebase') {
-        try {
-          const data = await cloudRequest('students');
-          if (data) {
-               const cloudStudents = Object.values(data) as Student[];
-               // Update local cache
-               try {
-                   const db = await getDB();
-                   const tx = db.transaction('students', 'readwrite');
-                   for (const s of cloudStudents) await tx.store.put(s);
-                   await tx.done;
-               } catch(dbErr) { /* ignore cache write error */ }
-               
-               return cloudStudents.sort((a, b) => new Date(b.reportTime).getTime() - new Date(a.reportTime).getTime());
-          }
-        } catch(e) {}
+      try {
+        const data = await cloudRequest('students');
+        if (data) {
+          const cloudStudents = Object.values(data) as Student[];
+          // Update local cache
+          try {
+            const db = await getDB();
+            const tx = db.transaction('students', 'readwrite');
+            for (const s of cloudStudents) await tx.store.put(s);
+            await tx.done;
+          } catch (dbErr) { /* ignore cache write error */ }
+
+          return cloudStudents.sort((a, b) => new Date(b.reportTime).getTime() - new Date(a.reportTime).getTime());
+        }
+      } catch (e) { }
     }
 
     const db = await getDB();
@@ -182,11 +185,11 @@ export const saveStudent = async (student: Omit<Student, 'id' | 'reportTime'>): 
 
   // Fire and forget cloud update
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest(`students/${newStudent.id}`, 'PUT', newStudent).catch(() => {});
-      }
-  }).catch(() => {});
-  
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest(`students/${newStudent.id}`, 'PUT', newStudent).catch(() => { });
+    }
+  }).catch(() => { });
+
   window.dispatchEvent(new Event('students-updated'));
   return newStudent;
 };
@@ -196,11 +199,11 @@ export const deleteStudent = async (id: string): Promise<void> => {
   await db.delete('students', id);
 
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest(`students/${id}`, 'DELETE').catch(() => {});
-      }
-  }).catch(() => {});
-  
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest(`students/${id}`, 'DELETE').catch(() => { });
+    }
+  }).catch(() => { });
+
   window.dispatchEvent(new Event('students-updated'));
 };
 
@@ -210,33 +213,33 @@ export const getAppUsers = async (): Promise<AppUser[]> => {
   try {
     const config = await getCloudConfig();
     if (config?.enabled && config.type === 'firebase') {
-         try {
-           const data = await cloudRequest('appUsers');
-           if (data) {
-               const cloudUsers = Object.values(data) as AppUser[];
-               // Update local cache
-               try {
-                 const db = await getDB();
-                 const tx = db.transaction('appUsers', 'readwrite');
-                 await tx.store.clear(); 
-                 for (const u of cloudUsers) await tx.store.put(u);
-                 await tx.done;
-               } catch(dbErr) {}
-               return cloudUsers;
-           }
-         } catch (e) {}
+      try {
+        const data = await cloudRequest('appUsers');
+        if (data) {
+          const cloudUsers = Object.values(data) as AppUser[];
+          // Update local cache
+          try {
+            const db = await getDB();
+            const tx = db.transaction('appUsers', 'readwrite');
+            await tx.store.clear();
+            for (const u of cloudUsers) await tx.store.put(u);
+            await tx.done;
+          } catch (dbErr) { }
+          return cloudUsers;
+        }
+      } catch (e) { }
     }
 
     const db = await getDB();
     return db.getAll('appUsers');
-  } catch(e) {
+  } catch (e) {
     console.error("getAppUsers failed", e);
     return [];
   }
 };
 
 export const saveAppUser = async (user: Omit<AppUser, 'id' | 'createdAt' | 'role'>): Promise<AppUser> => {
-  const users = await getAppUsers(); 
+  const users = await getAppUsers();
   if (users.some(u => u.idCard === user.idCard)) {
     throw new Error("该身份证号已存在");
   }
@@ -247,16 +250,16 @@ export const saveAppUser = async (user: Omit<AppUser, 'id' | 'createdAt' | 'role
     role: 'user',
     createdAt: new Date().toISOString(),
   };
-  
+
   const db = await getDB();
   await db.put('appUsers', newUser);
-  
+
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest(`appUsers/${newUser.id}`, 'PUT', newUser).catch(() => {});
-      }
-  }).catch(() => {});
-  
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest(`appUsers/${newUser.id}`, 'PUT', newUser).catch(() => { });
+    }
+  }).catch(() => { });
+
   return newUser;
 };
 
@@ -265,10 +268,10 @@ export const deleteAppUser = async (id: string): Promise<void> => {
   await db.delete('appUsers', id);
 
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest(`appUsers/${id}`, 'DELETE').catch(() => {});
-      }
-  }).catch(() => {});
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest(`appUsers/${id}`, 'DELETE').catch(() => { });
+    }
+  }).catch(() => { });
 };
 
 // --- System Settings & Auth ---
@@ -277,19 +280,19 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
   let config = null;
   try {
     config = await getCloudConfig();
-  } catch(e) { console.warn("Could not get cloud config for settings", e); }
-  
+  } catch (e) { console.warn("Could not get cloud config for settings", e); }
+
   if (config?.enabled && config.type === 'firebase') {
-      try {
-        const data = await cloudRequest('system_settings');
-        if (data) {
-             try {
-                const db = await getDB();
-                await db.put('settings', data, 'system_config');
-             } catch(dbErr) {}
-             return data;
-        }
-      } catch (e) {}
+    try {
+      const data = await cloudRequest('system_settings');
+      if (data) {
+        try {
+          const db = await getDB();
+          await db.put('settings', data, 'system_config');
+        } catch (dbErr) { }
+        return data;
+      }
+    } catch (e) { }
   }
 
   try {
@@ -307,11 +310,11 @@ export const saveSystemSettings = async (settings: SystemSettings): Promise<void
   await db.put('settings', settings, 'system_config');
 
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest('system_settings', 'PUT', settings).catch(() => {});
-      }
-  }).catch(() => {});
-  
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest('system_settings', 'PUT', settings).catch(() => { });
+    }
+  }).catch(() => { });
+
   window.dispatchEvent(new Event('settings-updated'));
 };
 
@@ -354,21 +357,21 @@ export const isReportingTimeValid = async (): Promise<{ valid: boolean; message?
 
 export const verifyAdminPassword = async (inputPassword: string): Promise<boolean> => {
   let config = null;
-  try { config = await getCloudConfig(); } catch(e) {}
-  
+  try { config = await getCloudConfig(); } catch (e) { }
+
   if (config?.enabled && config.type === 'firebase') {
-      try { 
-        const storedPwd = await cloudRequest(ADMIN_PWD_KEY); 
-        if (storedPwd) {
-             try {
-                const db = await getDB();
-                await db.put('settings', storedPwd, ADMIN_PWD_KEY);
-             } catch(e){}
-             return inputPassword === storedPwd;
-        }
-      } catch(e) {}
+    try {
+      const storedPwd = await cloudRequest(ADMIN_PWD_KEY);
+      if (storedPwd) {
+        try {
+          const db = await getDB();
+          await db.put('settings', storedPwd, ADMIN_PWD_KEY);
+        } catch (e) { }
+        return inputPassword === storedPwd;
+      }
+    } catch (e) { }
   }
-  
+
   // Local check (synced)
   try {
     const db = await getDB();
@@ -384,10 +387,10 @@ export const changeAdminPassword = async (newPassword: string): Promise<void> =>
   await db.put('settings', newPassword, ADMIN_PWD_KEY);
 
   getCloudConfig().then(config => {
-      if (config?.enabled && config.type === 'firebase') {
-          cloudRequest(ADMIN_PWD_KEY, 'PUT', newPassword).catch(() => {});
-      }
-  }).catch(() => {});
+    if (config?.enabled && config.type === 'firebase') {
+      cloudRequest(ADMIN_PWD_KEY, 'PUT', newPassword).catch(() => { });
+    }
+  }).catch(() => { });
 };
 
 export const loginAdmin = async (username: string, passwordOrIdCard: string): Promise<Recruiter | null> => {
@@ -396,9 +399,9 @@ export const loginAdmin = async (username: string, passwordOrIdCard: string): Pr
     return isValid ? MOCK_ADMIN : null;
   }
 
-  const users = await getAppUsers(); 
+  const users = await getAppUsers();
   const user = users.find(u => u.idCard === passwordOrIdCard && u.username === username);
-  
+
   if (user && user.status === 'active') {
     return { id: user.id, username: user.username, role: 'admin' };
   }
@@ -409,7 +412,7 @@ export const loginAdmin = async (username: string, passwordOrIdCard: string): Pr
 export const validateReporter = (username: string, phoneNumber: string): Recruiter | null => {
   if (!username) return null;
   const phoneRegex = /^1[3-9]\d{9}$/;
-  
+
   if (!phoneRegex.test(phoneNumber)) {
     return null;
   }
@@ -426,12 +429,12 @@ export const getFullBackup = async (): Promise<string> => {
   const settings = await db.get('settings', 'system_config');
   const password = await db.get('settings', ADMIN_PWD_KEY);
   const cloudConfig = await db.get('settings', CLOUD_CONFIG_KEY);
-  
+
   const backup = {
     students,
     appUsers,
     settings: settings || null,
-    password: password || null, 
+    password: password || null,
     cloudConfig: cloudConfig || null,
     timestamp: new Date().toISOString(),
     version: '2.0',
@@ -451,7 +454,7 @@ export const restoreFromBackup = async (jsonString: string): Promise<{ success: 
     const tx = db.transaction(['students', 'appUsers', 'settings'], 'readwrite');
     await tx.objectStore('students').clear();
     await tx.objectStore('appUsers').clear();
-    
+
     if (Array.isArray(data.students)) {
       for (const s of data.students) await tx.objectStore('students').put(s);
     }
@@ -462,7 +465,7 @@ export const restoreFromBackup = async (jsonString: string): Promise<{ success: 
       await tx.objectStore('settings').put(data.settings, 'system_config');
     }
     if (data.password) {
-        await tx.objectStore('settings').put(data.password, ADMIN_PWD_KEY);
+      await tx.objectStore('settings').put(data.password, ADMIN_PWD_KEY);
     }
     if (data.cloudConfig) {
       await tx.objectStore('settings').put(data.cloudConfig, CLOUD_CONFIG_KEY);
@@ -471,7 +474,7 @@ export const restoreFromBackup = async (jsonString: string): Promise<{ success: 
 
     window.dispatchEvent(new Event('students-updated'));
     window.dispatchEvent(new Event('settings-updated'));
-    
+
     return { success: true, message: '数据恢复成功' };
   } catch (error) {
     return { success: false, message: '恢复失败: ' + (error as Error).message };
@@ -481,7 +484,7 @@ export const restoreFromBackup = async (jsonString: string): Promise<{ success: 
 export const exportToCSV = async (data?: Student[]): Promise<void> => {
   try {
     const students = data || await getStudents();
-    
+
     if (students.length === 0) {
       alert("暂无数据可导出");
       return;
@@ -511,7 +514,7 @@ export const exportToCSV = async (data?: Student[]): Promise<void> => {
     const link = document.createElement("a");
     link.setAttribute("href", url);
     const prefix = data ? '筛选报备数据' : '全部报备数据';
-    link.setAttribute("download", `${prefix}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `${prefix}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

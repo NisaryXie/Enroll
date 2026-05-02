@@ -21,6 +21,9 @@ interface Props {
 type Tab = 'DASHBOARD' | 'USERS' | 'SETTINGS';
 
 const DEFAULT_LOGO = "https://pic1.imgdb.cn/item/69383a2df9354404e341391f.jpg";
+const DEFAULT_FIREBASE_DB_URL =
+  (import.meta as any)?.env?.VITE_FIREBASE_DB_URL ||
+  'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState<Tab>('DASHBOARD');
@@ -50,7 +53,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
   const [settings, setSettings] = useState<SystemSettings>({ reportingStartTime: null, reportingEndTime: null, logoUrl: '' });
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({ 
     type: 'firebase', 
-    dbUrl: 'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app', 
+    dbUrl: DEFAULT_FIREBASE_DB_URL,
     dbSecret: '', 
     enabled: true 
   });
