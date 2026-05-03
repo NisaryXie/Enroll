@@ -28,7 +28,7 @@ const CLOUD_CONFIG_LOCKED =
   typeof ENV_FIREBASE_DB_URL === 'string' && ENV_FIREBASE_DB_URL.trim() !== '';
 const DEFAULT_FIREBASE_DB_URL = CLOUD_CONFIG_LOCKED
   ? ENV_FIREBASE_DB_URL.trim()
-  : 'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
+  : 'https://sqlite.echoloom.cn';
 
 const getLockedCloudConfig = (): CloudConfig => ({
   type: 'firebase',
