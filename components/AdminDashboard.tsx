@@ -8,7 +8,8 @@ import {
   getAppUsers, saveAppUser, deleteAppUser,
   getSystemSettings, saveSystemSettings, deleteStudent,
   getFullBackup, restoreFromBackup,
-  getCloudConfig, saveCloudConfig
+  getCloudConfig, saveCloudConfig,
+  formatChinaDateTime
 } from '../services/dataService';
 import { analyzeRecruitmentData } from '../services/geminiService';
 import { Student, AnalysisResult, AppUser, SystemSettings, Recruiter, CloudConfig } from '../types';
@@ -386,7 +387,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
     const classType = (s.classType || '').toLowerCase();
     const major = (s.major || '').toLowerCase();
     const type = s.contactType === 'student' ? '学生' : '家长';
-    const date = new Date(s.reportTime).toLocaleString().toLowerCase();
+    const date = formatChinaDateTime(s.reportTime).toLowerCase();
     const recruiter = (s.recruiterName || '').toLowerCase();
     const recruiterPhone = (s.recruiterPhone || '');
 
@@ -597,7 +598,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                               {student.contactType === 'student' ? '学生' : '家长'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(student.reportTime).toLocaleString()}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatChinaDateTime(student.reportTime)}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                             <div>{student.recruiterName || student.recruiterId}</div>
                             <div className="text-xs">{maskPhone(student.recruiterPhone)}</div>

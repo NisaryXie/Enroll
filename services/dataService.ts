@@ -36,6 +36,23 @@ const getLockedCloudConfig = (): CloudConfig => ({
   enabled: true
 });
 
+export const formatChinaDateTime = (value?: string | null): string => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const formatted = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(d);
+  return formatted.replace(/\//g, '-');
+};
+
 // --- Mock Data ---
 const MOCK_ADMIN: Recruiter = { id: 'admin-1', username: 'admin', role: 'admin' };
 const ADMIN_PWD_KEY = 'admin_password';
@@ -515,7 +532,7 @@ export const exportToCSV = async (data?: Student[]): Promise<void> => {
         s.major || '',
         s.phoneNumber,
         s.contactType === 'student' ? '学生本人' : '家长',
-        new Date(s.reportTime).toLocaleString(),
+        formatChinaDateTime(s.reportTime),
         s.recruiterName || s.recruiterId,
         s.recruiterPhone || s.recruiterId
       ].join(","))
