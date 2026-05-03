@@ -23,7 +23,7 @@ type Tab = 'DASHBOARD' | 'USERS' | 'SETTINGS';
 const DEFAULT_LOGO = "https://pic1.imgdb.cn/item/69383a2df9354404e341391f.jpg";
 const DEFAULT_FIREBASE_DB_URL =
   (import.meta as any)?.env?.VITE_FIREBASE_DB_URL ||
-  'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
+  'https://sqlite.echoloom.cn';
 
 const CLOUD_CONFIG_LOCKED =
   typeof (import.meta as any)?.env?.VITE_FIREBASE_DB_URL === 'string' &&
