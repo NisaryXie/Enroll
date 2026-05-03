@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from 'recharts';
 import { Download, Sparkles, RefreshCw, LogOut, Users, Search, Lock, X, Clock, Plus, Trash2, Check, Image as ImageIcon, Upload, Database, UploadCloud, DownloadCloud, Globe, Link as LinkIcon, AlertCircle, AlertTriangle } from 'lucide-react';
-import { 
-  getStudents, exportToCSV, verifyAdminPassword, changeAdminPassword, 
+import {
+  getStudents, exportToCSV, verifyAdminPassword, changeAdminPassword,
   getAppUsers, saveAppUser, deleteAppUser,
   getSystemSettings, saveSystemSettings, deleteStudent,
   getFullBackup, restoreFromBackup,
@@ -24,6 +24,21 @@ const DEFAULT_LOGO = "https://pic1.imgdb.cn/item/69383a2df9354404e341391f.jpg";
 const DEFAULT_FIREBASE_DB_URL =
   (import.meta as any)?.env?.VITE_FIREBASE_DB_URL ||
   'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+const CLOUD_CONFIG_LOCKED =
+  typeof (import.meta as any)?.env?.VITE_FIREBASE_DB_URL === 'string' &&
+  (import.meta as any)?.env?.VITE_FIREBASE_DB_URL.trim() !== '';
+
+const maskPhone = (value?: string) => {
+  const v = (value || '').trim();
+  if (!v) return '-';
+  if (v.includes('*')) return v;
+  const digits = v.replace(/\D/g, '');
+  if (/^1[3-9]\d{9}$/.test(digits)) {
+    return digits.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2');
+  }
+  return v;
+};
 
 const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState<Tab>('DASHBOARD');
@@ -51,14 +66,14 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
 
   // Settings State
   const [settings, setSettings] = useState<SystemSettings>({ reportingStartTime: null, reportingEndTime: null, logoUrl: '' });
-  const [cloudConfig, setCloudConfig] = useState<CloudConfig>({ 
-    type: 'firebase', 
+  const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
+    type: 'firebase',
     dbUrl: DEFAULT_FIREBASE_DB_URL,
-    dbSecret: '', 
-    enabled: true 
+    dbSecret: '',
+    enabled: true
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
-  
+
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
@@ -67,8 +82,8 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
     // Wrap initial loads in a safe function
     const init = async () => {
       try {
-        await loadSettings(); 
-        await loadData(); 
+        await loadSettings();
+        await loadData();
         if (user.username === 'admin') {
           await loadUsers();
         }
@@ -122,9 +137,9 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
     try {
       const s = await getSystemSettings();
       setSettings(s || { reportingStartTime: null, reportingEndTime: null, logoUrl: '' });
-      
+
       const c = await getCloudConfig();
-      if (c) setCloudConfig(prev => ({...prev, ...c}));
+      if (c) setCloudConfig(prev => ({ ...prev, ...c }));
     } catch (e) {
       console.error("Failed to load settings", e);
     }
@@ -228,10 +243,10 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
     try {
       await saveSystemSettings(settings);
       await saveCloudConfig(cloudConfig);
-      
+
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 2000);
-      
+
       await loadData();
     } catch (e) {
       alert("保存失败");
@@ -287,11 +302,11 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
 
     let confirmRestore = false;
     try {
-        confirmRestore = confirm("高风险操作：恢复备份将完全覆盖当前的【所有数据】。\n\n建议在恢复前先导出当前数据作为备份。\n\n确定要继续吗？");
-    } catch(e) {
-        console.error(e);
-        if (backupInputRef.current) backupInputRef.current.value = '';
-        return;
+      confirmRestore = confirm("高风险操作：恢复备份将完全覆盖当前的【所有数据】。\n\n建议在恢复前先导出当前数据作为备份。\n\n确定要继续吗？");
+    } catch (e) {
+      console.error(e);
+      if (backupInputRef.current) backupInputRef.current.value = '';
+      return;
     }
 
     if (!confirmRestore) {
@@ -326,9 +341,9 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
     const params = new URLSearchParams();
     params.set('app', 'student');
     params.set('sync_url', encodeURIComponent(cloudConfig.dbUrl));
-    
+
     if (cloudConfig.dbSecret) {
-        params.set('sync_key', encodeURIComponent(cloudConfig.dbSecret));
+      params.set('sync_key', encodeURIComponent(cloudConfig.dbSecret));
     }
     return `${baseUrl}?${params.toString()}`;
   };
@@ -404,7 +419,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
             </div>
             <div className="flex items-center gap-4">
               {user.username === 'admin' && (
-                <button 
+                <button
                   onClick={() => setShowPwdModal(true)}
                   className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-school-600 transition"
                 >
@@ -420,7 +435,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
               </button>
             </div>
           </div>
-          
+
           {/* Navigation Tabs */}
           <div className="flex space-x-8 -mb-px overflow-x-auto">
             <button
@@ -450,11 +465,11 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        
+
         {/* --- DASHBOARD TAB --- */}
         {activeTab === 'DASHBOARD' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <h3 className="text-sm font-medium text-gray-500">
                   {user.username === 'admin' ? '总报备人数' : '我的报备人数'}
@@ -464,7 +479,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                   <span className="text-sm text-gray-500">人</span>
                 </div>
                 <div className="mt-4">
-                  <button 
+                  <button
                     onClick={() => exportToCSV(students).catch(console.error)}
                     className="w-full flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition"
                   >
@@ -485,7 +500,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                       </h3>
                       <p className="text-blue-100 text-sm mt-1">基于实时数据的招生趋势洞察</p>
                     </div>
-                    <button 
+                    <button
                       onClick={handleAnalysis}
                       disabled={analyzing}
                       className={`px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm bg-white/20 hover:bg-white/30 transition border border-white/30 ${analyzing ? 'opacity-70 cursor-wait' : ''}`}
@@ -514,9 +529,9 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
-                    <RechartsTooltip cursor={{fill: '#f9fafb'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <RechartsTooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     <Bar name="报备人数" dataKey="count" fill="#05A7E2" radius={[4, 4, 0, 0]} barSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -526,20 +541,20 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
               <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-2">
-                   <h3 className="text-lg font-bold text-gray-800">详细报备列表</h3>
-                   <button onClick={() => loadData().catch(console.error)} className="text-gray-400 hover:text-[#05A7E2]" title="刷新"><RefreshCw size={16} /></button>
-                   <div className="h-4 w-px bg-gray-300 mx-1"></div>
-                   <button 
-                     onClick={() => exportToCSV(filteredStudents).catch(console.error)}
-                     className="flex items-center gap-1 text-sm text-gray-600 hover:text-[#05A7E2] transition px-2 py-1 rounded-lg hover:bg-gray-50 border border-gray-200"
-                     title="仅导出当前列表显示的报备数据"
-                   >
-                     <Download size={14} /> 导出筛选数据
-                   </button>
+                  <h3 className="text-lg font-bold text-gray-800">详细报备列表</h3>
+                  <button onClick={() => loadData().catch(console.error)} className="text-gray-400 hover:text-[#05A7E2]" title="刷新"><RefreshCw size={16} /></button>
+                  <div className="h-4 w-px bg-gray-300 mx-1"></div>
+                  <button
+                    onClick={() => exportToCSV(filteredStudents).catch(console.error)}
+                    className="flex items-center gap-1 text-sm text-gray-600 hover:text-[#05A7E2] transition px-2 py-1 rounded-lg hover:bg-gray-50 border border-gray-200"
+                    title="仅导出当前列表显示的报备数据"
+                  >
+                    <Download size={14} /> 导出筛选数据
+                  </button>
                 </div>
                 <div className="relative w-full sm:w-80">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="全字段搜索 (姓名/专业/班型/电话...)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -548,7 +563,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                   <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
                 </div>
               </div>
-              
+
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="min-w-full divide-y divide-gray-100">
                   <thead className="bg-gray-50">
@@ -576,7 +591,7 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono text-xs">{student.idCard || '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.classType || '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.major || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.phoneNumber}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{maskPhone(student.phoneNumber)}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${student.contactType === 'student' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                               {student.contactType === 'student' ? '学生' : '家长'}
@@ -584,12 +599,12 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(student.reportTime).toLocaleString()}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                             <div>{student.recruiterName || student.recruiterId}</div>
-                             <div className="text-xs">{student.recruiterPhone}</div>
+                            <div>{student.recruiterName || student.recruiterId}</div>
+                            <div className="text-xs">{maskPhone(student.recruiterPhone)}</div>
                           </td>
                           {user.role === 'admin' && (
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                              <button 
+                              <button
                                 onClick={() => triggerDeleteStudent(student.id)}
                                 className="text-gray-400 hover:text-red-600 transition"
                                 title="删除此记录"
@@ -613,280 +628,286 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
         {/* --- USERS TAB --- */}
         {activeTab === 'USERS' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-               <div>
-                 <h2 className="text-lg font-bold text-gray-900">用户管理</h2>
-                 <p className="text-sm text-gray-500">添加其他管理员账号 (子管理员)</p>
-               </div>
-               <button 
-                 onClick={() => setShowUserModal(true)}
-                 className="flex items-center gap-2 bg-[#05A7E2] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-600 transition"
-               >
-                 <Plus size={16} /> 添加管理员
-               </button>
-             </div>
-             
-             <table className="min-w-full divide-y divide-gray-100">
-               <thead className="bg-gray-50">
-                 <tr>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名 (登录账号)</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">身份证号 (登录密码)</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                 </tr>
-               </thead>
-               <tbody className="bg-white divide-y divide-gray-100">
-                 {appUsers.length > 0 ? (
-                   appUsers.map(user => (
-                     <tr key={user.id} className="hover:bg-gray-50">
-                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{user.idCard}</td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</td>
-                       <td className="px-6 py-4 whitespace-nowrap">
-                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                           {user.status === 'active' ? '正常' : '禁用'}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                         <button 
-                           onClick={() => triggerDeleteUser(user.id)}
-                           className="text-red-600 hover:text-red-900 ml-4 flex items-center gap-1 float-right"
-                         >
-                           <Trash2 size={16} /> 删除
-                         </button>
-                       </td>
-                     </tr>
-                   ))
-                 ) : (
-                   <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">暂无子管理员，请点击右上角添加</td></tr>
-                 )}
-               </tbody>
-             </table>
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">用户管理</h2>
+                <p className="text-sm text-gray-500">添加其他管理员账号 (子管理员)</p>
+              </div>
+              <button
+                onClick={() => setShowUserModal(true)}
+                className="flex items-center gap-2 bg-[#05A7E2] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-600 transition"
+              >
+                <Plus size={16} /> 添加管理员
+              </button>
+            </div>
+
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名 (登录账号)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">身份证号 (登录密码)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {appUsers.length > 0 ? (
+                  appUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{user.idCard}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {user.status === 'active' ? '正常' : '禁用'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => triggerDeleteUser(user.id)}
+                          className="text-red-600 hover:text-red-900 ml-4 flex items-center gap-1 float-right"
+                        >
+                          <Trash2 size={16} /> 删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">暂无子管理员，请点击右上角添加</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
 
         {/* --- SETTINGS TAB --- */}
         {activeTab === 'SETTINGS' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="max-w-2xl space-y-8">
-               
-               {/* Cloud Sync Settings */}
-               <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Globe className="text-[#05A7E2]" /> 多端数据同步配置
-                  </h2>
-                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
-                    <p>启用后，数据将存储在远程 Firebase Realtime Database，实现不同设备（电脑后台、手机H5）之间的数据实时同步。</p>
-                  </div>
+            <div className="max-w-2xl space-y-8">
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <input 
-                        type="checkbox" 
-                        id="cloudEnabled"
-                        checked={cloudConfig.enabled}
-                        onChange={(e) => setCloudConfig({...cloudConfig, enabled: e.target.checked})}
-                        className="w-5 h-5 text-[#05A7E2] rounded focus:ring-[#05A7E2] border-gray-300"
-                      />
-                      <label htmlFor="cloudEnabled" className="font-medium text-gray-800">启用云端同步</label>
-                    </div>
-
-                    <div className={!cloudConfig.enabled ? 'opacity-50 pointer-events-none' : ''}>
-                      {/* Storage Type - Locked to Firebase */}
-                      <div className="mb-4">
-                         <label className="block text-sm font-medium text-gray-700 mb-2">存储类型</label>
-                         <div className="flex gap-4">
-                            <div
-                               className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition bg-orange-50 border-orange-200 text-orange-700 ring-1 ring-orange-200`}
-                            >
-                               <Database size={16} /> Firebase Realtime DB
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Firebase Database URL</label>
-                        <input 
-                          type="text" 
-                          className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900 font-mono text-sm"
-                          placeholder="https://your-project.firebaseio.com"
-                          value={cloudConfig.dbUrl}
-                          onChange={(e) => setCloudConfig({...cloudConfig, dbUrl: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Database Secret (Legacy) / Auth Token</label>
-                        <input 
-                          type="password" 
-                          className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900 font-mono text-sm"
-                          placeholder="Token"
-                          value={cloudConfig.dbSecret || ''}
-                          onChange={(e) => setCloudConfig({...cloudConfig, dbSecret: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {cloudConfig.enabled && cloudConfig.dbUrl && (
-                     <div className="mt-6 bg-green-50 border border-green-100 rounded-xl p-4">
-                       <h4 className="font-bold text-green-800 text-sm flex items-center gap-2 mb-2">
-                         <LinkIcon size={16}/> H5 报备端分享链接
-                       </h4>
-                       <p className="text-xs text-green-700 mb-3">
-                         将此链接发送给招生老师，他们打开后会自动连接到此数据库。
-                       </p>
-                       <div className="flex gap-2">
-                         <input 
-                           readOnly 
-                           value={getShareLink()} 
-                           className="flex-1 text-xs bg-white border border-green-200 px-3 py-2 rounded text-gray-600 select-all"
-                         />
-                         <button 
-                           onClick={copyShareLink}
-                           className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition"
-                         >
-                           复制
-                         </button>
-                       </div>
-                     </div>
+              {/* Cloud Sync Settings */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Globe className="text-[#05A7E2]" /> 多端数据同步配置
+                </h2>
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+                  <p>启用后，数据将存储在远程 Firebase Realtime Database，实现不同设备（电脑后台、手机H5）之间的数据实时同步。</p>
+                  {CLOUD_CONFIG_LOCKED && (
+                    <p className="mt-2 text-xs text-blue-700">当前部署已通过环境变量锁定同步地址（VITE_FIREBASE_DB_URL）。此处修改不会影响其它浏览器。</p>
                   )}
-               </div>
+                </div>
 
-               <hr className="border-gray-100" />
-               
-               {/* Time Settings */}
-               <div>
-                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                   <Clock className="text-[#05A7E2]" /> 报备时间设置
-                 </h2>
-                 <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-6 text-sm text-gray-600">
-                   <p>设置报备系统的开放时间窗口。如果在该时间段之外，移动端将无法提交数据。</p>
-                 </div>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">开始时间</label>
-                     <input 
-                       type="datetime-local" 
-                       className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900"
-                       value={settings?.reportingStartTime || ''}
-                       onChange={(e) => setSettings({...settings, reportingStartTime: e.target.value})}
-                       style={{colorScheme: 'light'}}
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">截止时间</label>
-                     <input 
-                       type="datetime-local" 
-                       className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900"
-                       value={settings?.reportingEndTime || ''}
-                       onChange={(e) => setSettings({...settings, reportingEndTime: e.target.value})}
-                       style={{colorScheme: 'light'}}
-                     />
-                   </div>
-                 </div>
-               </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <input
+                      type="checkbox"
+                      id="cloudEnabled"
+                      checked={cloudConfig.enabled}
+                      onChange={(e) => setCloudConfig({ ...cloudConfig, enabled: e.target.checked })}
+                      disabled={CLOUD_CONFIG_LOCKED}
+                      className="w-5 h-5 text-[#05A7E2] rounded focus:ring-[#05A7E2] border-gray-300 disabled:opacity-60"
+                    />
+                    <label htmlFor="cloudEnabled" className="font-medium text-gray-800">启用云端同步</label>
+                  </div>
 
-               <hr className="border-gray-100" />
+                  <div className={!cloudConfig.enabled ? 'opacity-50 pointer-events-none' : ''}>
+                    {/* Storage Type - Locked to Firebase */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">存储类型</label>
+                      <div className="flex gap-4">
+                        <div
+                          className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition bg-orange-50 border-orange-200 text-orange-700 ring-1 ring-orange-200`}
+                        >
+                          <Database size={16} /> Firebase Realtime DB
+                        </div>
+                      </div>
+                    </div>
 
-               {/* Data Backup & Restore */}
-               <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Database className="text-[#05A7E2]" /> 本地数据备份
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Export */}
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-md transition">
-                      <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <DownloadCloud size={20} className="text-blue-600"/> 导出全量备份
-                      </h3>
-                      <button 
-                        onClick={handleExportBackup}
-                        className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition shadow-sm mt-4"
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Firebase Database URL</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900 font-mono text-sm disabled:opacity-60"
+                        placeholder="https://your-project.firebaseio.com"
+                        value={cloudConfig.dbUrl}
+                        onChange={(e) => setCloudConfig({ ...cloudConfig, dbUrl: e.target.value })}
+                        disabled={CLOUD_CONFIG_LOCKED}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Database Secret (Legacy) / Auth Token</label>
+                      <input
+                        type="password"
+                        className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900 font-mono text-sm disabled:opacity-60"
+                        placeholder="Token"
+                        value={cloudConfig.dbSecret || ''}
+                        onChange={(e) => setCloudConfig({ ...cloudConfig, dbSecret: e.target.value })}
+                        disabled={CLOUD_CONFIG_LOCKED}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {cloudConfig.enabled && cloudConfig.dbUrl && (
+                  <div className="mt-6 bg-green-50 border border-green-100 rounded-xl p-4">
+                    <h4 className="font-bold text-green-800 text-sm flex items-center gap-2 mb-2">
+                      <LinkIcon size={16} /> H5 报备端分享链接
+                    </h4>
+                    <p className="text-xs text-green-700 mb-3">
+                      将此链接发送给招生老师，他们打开后会自动连接到此数据库。
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={getShareLink()}
+                        className="flex-1 text-xs bg-white border border-green-200 px-3 py-2 rounded text-gray-600 select-all"
+                      />
+                      <button
+                        onClick={copyShareLink}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition"
                       >
-                        导出数据 (JSON)
+                        复制
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
 
-                    {/* Import */}
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-md transition">
-                      <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <UploadCloud size={20} className="text-green-600"/> 恢复全量备份
-                      </h3>
-                      <div className="flex gap-2 mt-4">
-                         <input 
-                           type="file" 
-                           ref={backupInputRef}
-                           accept=".json"
-                           onChange={handleImportBackup}
-                           className="hidden"
-                         />
-                         <button 
-                           onClick={() => backupInputRef.current?.click()}
-                           className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition shadow-sm"
-                         >
-                           选择文件
-                         </button>
-                      </div>
+              <hr className="border-gray-100" />
+
+              {/* Time Settings */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Clock className="text-[#05A7E2]" /> 报备时间设置
+                </h2>
+                <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-6 text-sm text-gray-600">
+                  <p>设置报备系统的开放时间窗口。如果在该时间段之外，移动端将无法提交数据。</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">开始时间</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900"
+                      value={settings?.reportingStartTime || ''}
+                      onChange={(e) => setSettings({ ...settings, reportingStartTime: e.target.value })}
+                      style={{ colorScheme: 'light' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">截止时间</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#05A7E2] text-gray-900"
+                      value={settings?.reportingEndTime || ''}
+                      onChange={(e) => setSettings({ ...settings, reportingEndTime: e.target.value })}
+                      style={{ colorScheme: 'light' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* Data Backup & Restore */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Database className="text-[#05A7E2]" /> 本地数据备份
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Export */}
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-md transition">
+                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                      <DownloadCloud size={20} className="text-blue-600" /> 导出全量备份
+                    </h3>
+                    <button
+                      onClick={handleExportBackup}
+                      className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition shadow-sm mt-4"
+                    >
+                      导出数据 (JSON)
+                    </button>
+                  </div>
+
+                  {/* Import */}
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-md transition">
+                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                      <UploadCloud size={20} className="text-green-600" /> 恢复全量备份
+                    </h3>
+                    <div className="flex gap-2 mt-4">
+                      <input
+                        type="file"
+                        ref={backupInputRef}
+                        accept=".json"
+                        onChange={handleImportBackup}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => backupInputRef.current?.click()}
+                        className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition shadow-sm"
+                      >
+                        选择文件
+                      </button>
                     </div>
                   </div>
-               </div>
+                </div>
+              </div>
 
-               <hr className="border-gray-100" />
+              <hr className="border-gray-100" />
 
-               {/* Logo Settings */}
-               <div>
-                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                   <ImageIcon className="text-[#05A7E2]" /> 首页 Logo 设置
-                 </h2>
-                 
-                 <div className="mb-6">
-                   <label className="block text-sm font-medium text-gray-700 mb-2">当前预览</label>
-                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-center w-full sm:w-64 h-32">
-                     <img 
-                        src={settings.logoUrl || DEFAULT_LOGO} 
-                        alt="Current Logo" 
-                        className="max-h-full max-w-full object-contain"
+              {/* Logo Settings */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <ImageIcon className="text-[#05A7E2]" /> 首页 Logo 设置
+                </h2>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">当前预览</label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-center w-full sm:w-64 h-32">
+                    <img
+                      src={settings.logoUrl || DEFAULT_LOGO}
+                      alt="Current Logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">上传图片</label>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={triggerFileUpload}
+                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
+                      >
+                        <Upload size={16} /> 点击上传图片
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
                       />
-                   </div>
-                 </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                 <div className="space-y-4">
-                   <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">上传图片</label>
-                      <div className="flex gap-3">
-                        <button 
-                          onClick={triggerFileUpload}
-                          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
-                        >
-                          <Upload size={16} /> 点击上传图片
-                        </button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          className="hidden" 
-                          accept="image/*" 
-                          onChange={handleFileChange} 
-                        />
-                      </div>
-                   </div>
-                 </div>
-               </div>
-               
-               <div className="sticky bottom-4 z-40 bg-white/90 backdrop-blur border border-gray-200 shadow-xl rounded-xl p-4 flex items-center justify-between">
-                 <span className="text-sm text-gray-500">
-                    {settingsSaved ? '所有更改已保存' : '修改后请点击保存'}
-                 </span>
-                 <button 
-                   onClick={handleSaveSettings}
-                   className="flex items-center gap-2 bg-[#05A7E2] text-white px-6 py-3 rounded-lg font-bold hover:bg-sky-600 transition shadow-lg shadow-blue-200"
-                   >
-                   {settingsSaved ? <Check size={20} /> : null}
-                   {settingsSaved ? '保存成功' : '保存所有设置'}
-                 </button>
-               </div>
-             </div>
+              <div className="sticky bottom-4 z-40 bg-white/90 backdrop-blur border border-gray-200 shadow-xl rounded-xl p-4 flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  {settingsSaved ? '所有更改已保存' : '修改后请点击保存'}
+                </span>
+                <button
+                  onClick={handleSaveSettings}
+                  className="flex items-center gap-2 bg-[#05A7E2] text-white px-6 py-3 rounded-lg font-bold hover:bg-sky-600 transition shadow-lg shadow-blue-200"
+                >
+                  {settingsSaved ? <Check size={20} /> : null}
+                  {settingsSaved ? '保存成功' : '保存所有设置'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -895,33 +916,33 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
 
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
-         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative">
-             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-               <AlertTriangle className="text-red-600" size={24} />
-             </div>
-             <h3 className="text-lg font-bold text-gray-900 text-center mb-2">
-               确定要删除吗？
-             </h3>
-             <p className="text-sm text-gray-500 text-center mb-6">
-               此操作将永久删除该{deleteTarget.type === 'student' ? '报备记录' : '管理员账号'}，删除后无法恢复。
-             </p>
-             <div className="flex gap-3">
-               <button 
-                 onClick={() => setDeleteTarget(null)}
-                 className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
-               >
-                 取消
-               </button>
-               <button 
-                 onClick={executeDelete}
-                 className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition shadow-lg shadow-red-200"
-               >
-                 确认删除
-               </button>
-             </div>
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="text-red-600" size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">
+              确定要删除吗？
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              此操作将永久删除该{deleteTarget.type === 'student' ? '报备记录' : '管理员账号'}，删除后无法恢复。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+              >
+                取消
+              </button>
+              <button
+                onClick={executeDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition shadow-lg shadow-red-200"
+              >
+                确认删除
+              </button>
+            </div>
           </div>
-         </div>
+        </div>
       )}
 
       {/* Password Modal */}
@@ -956,20 +977,20 @@ const AdminDashboard: React.FC<Props> = ({ user, onLogout }) => {
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">姓名</label>
-                <input 
-                  type="text" 
-                  value={userFormName} 
-                  onChange={(e) => setUserFormName(e.target.value)} 
-                  className="w-full px-3 py-2 bg-gray-100 border-0 rounded-lg text-gray-900" 
+                <input
+                  type="text"
+                  value={userFormName}
+                  onChange={(e) => setUserFormName(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-100 border-0 rounded-lg text-gray-900"
                   placeholder="如: 李四"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">身份证号 (用于登录密码)</label>
-                <input 
-                  type="text" 
-                  value={userFormIdCard} 
-                  onChange={(e) => setUserFormIdCard(e.target.value)} 
+                <input
+                  type="text"
+                  value={userFormIdCard}
+                  onChange={(e) => setUserFormIdCard(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-100 border-0 rounded-lg text-gray-900 font-mono"
                   placeholder="18位身份证号"
                 />

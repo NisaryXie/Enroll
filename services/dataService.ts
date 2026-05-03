@@ -22,9 +22,19 @@ interface SchoolDB extends DBSchema {
 const DB_NAME = 'chengdu_school_db';
 const DB_VERSION = 1;
 const CLOUD_CONFIG_KEY = 'cloud_config';
-const DEFAULT_FIREBASE_DB_URL =
-  (import.meta as any)?.env?.VITE_FIREBASE_DB_URL ||
-  'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+const ENV_FIREBASE_DB_URL = (import.meta as any)?.env?.VITE_FIREBASE_DB_URL;
+const CLOUD_CONFIG_LOCKED =
+  typeof ENV_FIREBASE_DB_URL === 'string' && ENV_FIREBASE_DB_URL.trim() !== '';
+const DEFAULT_FIREBASE_DB_URL = CLOUD_CONFIG_LOCKED
+  ? ENV_FIREBASE_DB_URL.trim()
+  : 'https://direct-subset-479705-q4-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+const getLockedCloudConfig = (): CloudConfig => ({
+  type: 'firebase',
+  dbUrl: DEFAULT_FIREBASE_DB_URL,
+  enabled: true
+});
 
 // --- Mock Data ---
 const MOCK_ADMIN: Recruiter = { id: 'admin-1', username: 'admin', role: 'admin' };
@@ -69,23 +79,24 @@ const generateId = (): string => {
 
 export const getCloudConfig = async (): Promise<CloudConfig | null> => {
   try {
+    if (CLOUD_CONFIG_LOCKED) {
+      return getLockedCloudConfig();
+    }
+
     const db = await getDB();
     const storedConfig = await db.get('settings', CLOUD_CONFIG_KEY);
 
-    // Default to enabled with provided URL if not configured
     if (!storedConfig) {
-      const defaultConfig: CloudConfig = {
+      return {
         type: 'firebase',
         dbUrl: DEFAULT_FIREBASE_DB_URL,
         enabled: true
       };
-      return defaultConfig;
     }
 
     return storedConfig;
   } catch (e) {
     console.warn("Error loading cloud config, falling back to default", e);
-    // Return safe default to prevent app crash
     return {
       type: 'firebase',
       dbUrl: DEFAULT_FIREBASE_DB_URL,
@@ -97,7 +108,8 @@ export const getCloudConfig = async (): Promise<CloudConfig | null> => {
 export const saveCloudConfig = async (config: CloudConfig): Promise<void> => {
   try {
     const db = await getDB();
-    await db.put('settings', config, CLOUD_CONFIG_KEY);
+    const finalConfig = CLOUD_CONFIG_LOCKED ? getLockedCloudConfig() : config;
+    await db.put('settings', finalConfig, CLOUD_CONFIG_KEY);
     window.dispatchEvent(new Event('settings-updated'));
   } catch (e) {
     console.error("Failed to save cloud config", e);

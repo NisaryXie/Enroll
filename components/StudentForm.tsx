@@ -55,8 +55,16 @@ const StudentForm: React.FC<Props> = ({ user, onLogout, onBack }) => {
       }
 
       // 2. Input Validation
-      if (!name || !gender || !idCard || !classType || !major || !phone) {
+      const normalizedPhone = phone.replace(/\D/g, '');
+      if (!name || !gender || !idCard || !classType || !major || !normalizedPhone) {
         setError('请填写所有必填项');
+        setLoading(false);
+        return;
+      }
+
+      const phoneRegex = /^1[3-9]\d{9}$/;
+      if (!phoneRegex.test(normalizedPhone)) {
+        setError('请输入有效的11位手机号码');
         setLoading(false);
         return;
       }
@@ -68,7 +76,7 @@ const StudentForm: React.FC<Props> = ({ user, onLogout, onBack }) => {
         idCard,
         classType,
         major,
-        phoneNumber: phone,
+        phoneNumber: normalizedPhone,
         contactType,
         recruiterId: user.id, // For reporters, this is the phone number
         recruiterName: user.username, // This is the name entered on login screen
@@ -281,8 +289,10 @@ const StudentForm: React.FC<Props> = ({ user, onLogout, onBack }) => {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
                 placeholder={contactType === 'student' ? "请输入学生电话" : "请输入家长电话"}
+                inputMode="numeric"
+                maxLength={11}
                 className="w-full px-4 py-3.5 rounded-xl bg-gray-100 border-0 focus:ring-2 focus:ring-school-500 focus:bg-white outline-none transition text-gray-900 placeholder-gray-400"
               />
             </div>
