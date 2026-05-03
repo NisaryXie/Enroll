@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 9091,
       host: '0.0.0.0',
+      allowedHosts: ['enroll.echoloom.cn']
     },
     plugins: [react()],
     define: {
